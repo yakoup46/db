@@ -5,9 +5,23 @@ use Datto\ORM\QueryBuilder;
 
 class Query extends QueryBuilder {
 
+    /**
+     * @var array $sql SQL query parts
+     */
     protected $sql = array();
+
+    /**
+     * @var int $limit SQL limit
+     */
     protected $limit;
 
+    /**
+     * Generic template for a SELECT statement
+     *
+     * @param boolean $extra Additional parts for the SELECT
+     * @param boolean $fills Values for our $extra pieces
+     * @return self;
+     */
     public function buildSelect($extra = false, $fills = false)
     {
         array_push($this->sql, 'SELECT * FROM ' . $this->table);
@@ -34,6 +48,13 @@ class Query extends QueryBuilder {
         return $this;
     }
 
+    /**
+     * Generic template for a INSERT statement
+     *
+     * @param boolean $extra Additional parts for the INSERT
+     * @param boolean $fills Values for our $extra pieces
+     * @return self;
+     */
     public function buildInsert($extra = false, $fills = false)
     {
         array_push($this->sql, 'INSERT INTO ' . $this->table);
@@ -51,7 +72,10 @@ class Query extends QueryBuilder {
         return $this;
     }
 
-    // Custom Queries
+    /**
+     * CUSTOM QUERIES
+     * --------------
+     */
 
     /**
      * Specify a range result set
@@ -76,5 +100,8 @@ class Query extends QueryBuilder {
         return $field . ' = (SELECT MAX(' . $field . ') FROM ' . $this->table . ' ' . $this->where() .')';
     }
 
-    // ---
+    /**
+     * END CUSTOM QUERIES
+     * ------------------
+     */
 }
