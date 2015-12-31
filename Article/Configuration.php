@@ -69,5 +69,4 @@ class Configuration {
         $this->timestamp = time();
         $this->hash = hash('sha256', $this->timestamp . $this->configuration);
     }
-
 }

@@ -6,22 +6,24 @@ class Collection
     protected function populate($stmt)
     {
         $output = array();
-        $results = $stmt->fetchAll(\PDO::FETCH_CLASS);
+        //$results = $stmt->fetchAll(\PDO::FETCH_CLASS);
 
-        foreach ($results as $result) {
-            $class = current($this->collection);
-            $obj = new $class;
+        return $stmt->fetchAll(\PDO::FETCH_CLASS, "\\Datto\\ORM\\Article\\Configuration");
 
-            foreach ($result as $prop => $val) {
-                $setter = 'set' . ucfirst($prop);
+        // foreach ($results as $result) {
+        //     $class = current($this->collection);
+        //     $obj = new $class;
 
-                if (method_exists($obj, $setter)) {
-                    $obj->$setter($val);
-                }
-            }
+        //     foreach ($result as $prop => $val) {
+        //         $setter = 'set' . ucfirst($prop);
 
-            array_push($output, $obj);
-        }
+        //         if (method_exists($obj, $setter)) {
+        //             $obj->$setter($val);
+        //         }
+        //     }
+
+        //     array_push($output, $obj);
+        // }
 
         return $output;
     }

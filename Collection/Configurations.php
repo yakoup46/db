@@ -2,74 +2,52 @@
 namespace Datto\ORM\Collection;
 
 use Datto\ORM\Article\Configuration;
-use Datto\ORM\Stream;
 use Datto\ORM\Query;
 use Datto\ORM\Collection\Collection;
 
 class Configurations extends Collection
 {
-    protected $collection;
-    protected $table;
-
-    public function __construct()
-    {
-        $this->collection = array();
-
-        Query::$table = 'configuration';
-    }
-
     public function spawn()
     {
-        $article = new Configuration();
-
-        array_push($this->collection, $article);
-
-        return $article;
+        return new Configuration();
     }
 
     public function find($article)
     {
-        $stream = new Stream($article);
+        $qb = new Query($article);
 
-        Query::buildSelect('where');
-        Query::run();
+        $qb->buildSelect()->run();
 
-        return $this->populate(Query::$results);
+        return $this->populate($qb->results);
     }
 
     public function save($article)
     {
-        $stream = new Stream($article);
+        $qb = new Query($article, true);
 
-        Query::buildInsert('values');
-        Query::run();
+        $qb->buildInsert('values')
+        ->run();
     }
 
     public function findBetween($article)
     {
-        $stream = new Stream($article);
+        $qb = new Query($article);
 
-        Query::buildSelect('where.whereBetween', array(
+        $qb->buildSelect('whereBetween', array(
             'whereBetween' => 'timestamp'
-        ));
+        ))->run();
 
-        echo Query::query();
-
-        Query::run();
-
-        return $this->populate(Query::$results);
+        return $this->populate($qb->results);
     }
 
     public function findLatest($article)
     {
-        $stream = new Stream($article);
+        $qb = new Query($article);
 
-        Query::buildSelect('where.latest', array(
+        $qb->buildSelect('latest', array(
             'latest' => 'timestamp'
-        ));
+        ))->run();
 
-        Query::run();
-
-        return $this->populate(Query::$results);
+        return $this->populate($qb->results);
     }
 }

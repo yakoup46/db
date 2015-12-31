@@ -1,19 +1,18 @@
 <?php
 namespace Datto\ORM;
 
-abstract class Query extends QueryBuilder {
+use Datto\ORM\QueryBuilder;
 
-    public static $table;
-    public static $connection;
-    public static $properties;
-    public static $results;
-    public static $limit;
-    public static $hasWhere = false;
-    public static $sql = array();
+class Query extends QueryBuilder {
 
-    public static function buildSelect($extra = false, $fills = false)
+    protected $sql = array();
+    protected $limit;
+
+    public function buildSelect($extra = false, $fills = false)
     {
-        array_push(self::$sql, 'SELECT * FROM ' . self::$table);
+        array_push($this->sql, 'SELECT * FROM ' . $this->table);
+
+        array_push($this->sql, $this->where());
 
         if ($extra !== false) {
             $parts = explode('.', $extra);
@@ -21,118 +20,61 @@ abstract class Query extends QueryBuilder {
             foreach ($parts as $part) {
                 if (isset($fills[$part])) {
 
-                    if (self::$hasWhere) {
-                        array_push(self::$sql, self::also());
+                    if ($this->hasWhere) {
+                        array_push($this->sql, $this->also());
                     }
 
-                    array_push(self::$sql, self::$part($fills[$part]));
+                    array_push($this->sql, $this->$part($fills[$part]));
                 } else {
-                    array_push(self::$sql, self::$part());
+                    array_push($this->sql, $this->$part());
                 }
             }
         }
-    } 
 
-    public static function buildInsert($extra = false, $fills = false)
+        return $this;
+    }
+
+    public function buildInsert($extra = false, $fills = false)
     {
-        array_push(self::$sql, 'INSERT INTO ' . self::$table);
+        array_push($this->sql, 'INSERT INTO ' . $this->table);
+
+        $this->where();
 
         if ($extra !== false) {
             $parts = explode('.', $extra);
 
             foreach ($parts as $part) {
-                array_push(self::$sql, self::$part());
-            }
-        }
-    }
-
-    public static function latest($field)
-    {
-        return $field . ' = (SELECT MAX(' . $field . ') FROM ' . self::$table . ' ' . self::where() .')';
-    }
-
-    public static function also()
-    {
-        return ' AND ';
-    }
-
-    public static function values()
-    {
-        return '(' . self::getColumns() . ') VALUES (:' . self::getParams() . ')';
-    }
-
-    protected static function getColumns()
-    {
-        return implode(',', array_keys(self::$properties));
-    }
-
-    public static function where()
-    {
-        $sets = self::getSets();
-
-        if (!empty($sets)) {
-            self::$hasWhere = true;
-        }
-
-        return 'WHERE ' . $sets;  
-    }
-
-    public static function limit($limit) {
-        self::$limit = ' LIMIT ' . $limit;
-    }
-
-    public static function whereBetween($between)
-    {
-        return $between . ' BETWEEN ' . self::param($between, 1) . self::also() . self::param($between, 2);
-    }
-
-    public static function query()
-    {
-        return implode(' ', self::$sql);
-    }
-
-    public static function run()
-    {
-        $sql = self::query();
-        self::$sql = array();
-
-        if (isset(self::$limit)) {
-            $sql .= self::$limit;
-        }
-
-        $stmt = self::$connection->prepare($sql);
-
-        self::bind($stmt)->execute();
-
-        self::$results = $stmt;
-    }
-
-    private static function bind(\PDOStatement $stmt)
-    {
-        if (isset(self::$properties)) {
-            foreach (self::$properties as $k => $v) {
-                if (!is_array($v)) {
-                    $stmt->bindValue(":$k", $v);
-                } else {
-                    $stmt->bindValue(":$k"."1", $v[0]);
-                    $stmt->bindValue(":$k"."2", $v[1]);
-                }
+                array_push($this->sql, $this->$part());
             }
         }
 
-        return $stmt;
+        return $this;
     }
 
-    private static function getSets($seperator = ',')
+    // Custom Queries
+
+    /**
+     * Specify a range result set
+     *
+     * @param string $between db column
+     * @return string
+     */
+
+    public function whereBetween($between)
     {
-        $sets = array();
-
-        foreach (self::$properties as $k => $v) {
-            if (!is_array($v)) {
-                array_push($sets, $k . ' = :' . $k);
-            }
-        }
-
-        return implode($seperator, $sets);
+        return $between . ' BETWEEN ' . $this->param($between, 1) . $this->also() . $this->param($between, 2);
     }
+
+    /**
+     * Get lastest result by field
+     *
+     * @param string $field db column
+     * @return string
+     */
+    public function latest($field)
+    {
+        return $field . ' = (SELECT MAX(' . $field . ') FROM ' . $this->table . ' ' . $this->where() .')';
+    }
+
+    // ---
 }

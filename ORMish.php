@@ -20,6 +20,6 @@ class ORMish {
 
     protected function __construct(\PDO $connection)
     {
-        Query::$connection = $connection;
+       self::$connection = $connection;
     }
 }
